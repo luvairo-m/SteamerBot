@@ -61,6 +61,16 @@ namespace Steamer.Properties {
         }
         
         /// <summary>
+        ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap background {
+            get {
+                object obj = ResourceManager.GetObject("background", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
         ///   Ищет локализованную строку, похожую на По умолчанию игры в Steam скрыты, но вы можете изменить настройки конфиденциальности вашего профиля:
         ///1. В своем профиле Steam нажмите кнопку `&quot;Редактировать&quot;`.
         ///2. Перейдите во вкладку `&quot;Приватность&quot;`.

@@ -8,6 +8,10 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using DSharpPlus.Interactivity.Extensions;
+using System.IO;
+using GreetingsDrawer;
+using Steamer.Properties;
+using System.Drawing;
 
 namespace Steamer
 {
@@ -27,9 +31,31 @@ namespace Steamer
                 new DiscordEmbedBuilder
                 {
                     Title = answer.Answer.ToUpper(),
-                    ImageUrl = answer.Image
+                    ImageUrl = answer.Image,
                 }
             ).ConfigureAwait(false);
+        }
+
+        [Command("Hello")]
+        [Aliases("h")]
+        [Obsolete]
+        public async Task Hello(CommandContext ctx)
+        {
+            using (HttpClient client = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }))
+            {
+                HttpResponseMessage responce = await client.GetAsync(ctx.Message.Author.AvatarUrl)
+                    .ConfigureAwait(false);
+                Stream stream = await responce.Content.ReadAsStreamAsync();
+
+                Stream image = Drawer.GetImage(
+                    Resources.background, new Font("monospace", 40, FontStyle.Bold),
+                    Image.FromStream(stream), ctx.Message.Author.Username
+                );
+
+                //await ctx.Channel.SendMessageAsync(
+                //    (msg) => msg.
+                //).ConfigureAwait(false);
+            }
         }
 
         [Command("Error")]
@@ -137,7 +163,7 @@ namespace Steamer
                 await message.CreateReactionAsync(DiscordEmoji.FromName(ctx.Client, ":question:"))
                     .ConfigureAwait(false);
 
-                if(!(await inter.WaitForReactionAsync(
+                if (!(await inter.WaitForReactionAsync(
                     (msg) => msg.Message == message
                     && msg.User == ctx.User
                     && msg.Emoji.Equals(DiscordEmoji.FromName(ctx.Client, ":question:"))
