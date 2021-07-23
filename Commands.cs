@@ -12,6 +12,8 @@ using System.IO;
 using GreetingsDrawer;
 using Steamer.Properties;
 using System.Drawing;
+using System.Collections.Generic;
+using DSharpPlus.Interactivity;
 
 namespace Steamer
 {
@@ -36,9 +38,29 @@ namespace Steamer
             ).ConfigureAwait(false);
         }
 
+        [Command("Page")]
+        [Aliases("P")]
+        public async Task Page(CommandContext ctx)
+        {
+            IList<Page> pages = new List<Page>()
+            {
+                new Page("Hello world"),
+                new Page("Goodbye world")
+            };
+            await ctx.Channel.SendPaginatedMessageAsync(
+                ctx.User, pages, new PaginationEmojis
+                {
+                    Left = DiscordEmoji.FromName(ctx.Client, ":arrow_left:"),
+                    Right = DiscordEmoji.FromName(ctx.Client, ":arrow_right:"),
+                    SkipLeft = null,
+                    SkipRight = null,
+                    Stop = null
+                }
+            ).ConfigureAwait(false);
+        }
+
         [Command("Hello")]
-        [Aliases("h")]
-        [Obsolete]
+        [Aliases("H")]
         public async Task Hello(CommandContext ctx)
         {
             using (HttpClient client = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }))
@@ -51,10 +73,11 @@ namespace Steamer
                     Resources.background, new Font("monospace", 40, FontStyle.Bold),
                     Image.FromStream(stream), ctx.Message.Author.Username
                 );
+                image.Position = 0;
 
-                //await ctx.Channel.SendMessageAsync(
-                //    (msg) => msg.
-                //).ConfigureAwait(false);
+                await ctx.Channel.SendMessageAsync(
+                    (msg) => msg.WithFile("greetings.png", image)
+                ).ConfigureAwait(false);
             }
         }
 
@@ -154,22 +177,50 @@ namespace Steamer
                 .AddField("Идентификаторы", CommandUtils.BuildStringFromDict(user.Ids, DictTypes.Ids))
                 .AddField("Платформы", CommandUtils.BuildStringFromDict(user.Platforms, DictTypes.Platforms))
                 .AddField("Блокировки", CommandUtils.BuildStringFromDict(user.Prohibitions, DictTypes.Bans))
-                .AddField("Игры", CommandUtils.BuildStringFromDict(user.Games, DictTypes.Games))
-                .AddField("Дополнительно", "При отсутствии определённой информации нажмите на знак вопроса внизу");
+                .AddField("Игры", CommandUtils.BuildStringFromDict(user.Games, DictTypes.Games));
 
-                var message = await ctx.Channel.SendMessageAsync(embed: embed)
-                    .ConfigureAwait(false);
+                await ctx.Channel.SendPaginatedMessageAsync(
+                    ctx.User,
+                    new List<Page>()
+                    {
+                        new Page
+                        {
+                            Embed = embed
+                        },
+                        new Page
+                        {
+                            Embed = new DiscordEmbedBuilder
+                            {
+                                Title = "Изменение настроек приватности профиля Steam",
+                                Footer = new DiscordEmbedBuilder.EmbedFooter
+                                {
+                                    IconUrl = ctx.Member.AvatarUrl,
+                                    Text = $"Спасибо за вызов команды, {ctx.Member.DisplayName}"
+                                },
+                                Description = Resources.steam_command_help,
+                                Color = ctx.Member.Color
+                            }
+                        }
+                    },
+                    new PaginationEmojis
+                    {
+                        Left = DiscordEmoji.FromName(ctx.Client, ":arrow_left:"),
+                        Right = DiscordEmoji.FromName(ctx.Client, ":arrow_right:"),
+                        SkipLeft = null,
+                        SkipRight = null,
+                        Stop = null
+                    }, timeoutoverride: TimeSpan.FromSeconds(30)).ConfigureAwait(false);
 
-                await message.CreateReactionAsync(DiscordEmoji.FromName(ctx.Client, ":question:"))
-                    .ConfigureAwait(false);
+                //await message.CreateReactionAsync(DiscordEmoji.FromName(ctx.Client, ":question:"))
+                //    .ConfigureAwait(false);
 
-                if (!(await inter.WaitForReactionAsync(
-                    (msg) => msg.Message == message
-                    && msg.User == ctx.User
-                    && msg.Emoji.Equals(DiscordEmoji.FromName(ctx.Client, ":question:"))
-                ).ConfigureAwait(false)).TimedOut)
-                    await ctx.Channel.SendMessageAsync(Properties.Resources.steam_command_help)
-                        .ConfigureAwait(false);
+                //if (!(await inter.WaitForReactionAsync(
+                //    (msg) => msg.Message == message
+                //    && msg.User == ctx.User
+                //    && msg.Emoji.Equals(DiscordEmoji.FromName(ctx.Client, ":question:"))
+                //).ConfigureAwait(false)).TimedOut)
+                //    await ctx.Channel.SendMessageAsync(Properties.Resources.steam_command_help)
+                //        .ConfigureAwait(false);
             }
             catch (SParserExceptions.UserNotFoundException)
             {

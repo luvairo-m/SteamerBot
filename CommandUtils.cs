@@ -32,7 +32,7 @@ namespace Steamer
         public static string BuildStringFromDict(IDictionary<string, string> dict, DictTypes type)
         {
             if (dict is null)
-                return "Не найдены (читайте пункт `дополнительно` ниже)";
+                return "Не найдены (смотрите след. страницу)";
 
             StringBuilder result = new StringBuilder();
 
